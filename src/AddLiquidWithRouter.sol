@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./interfaces/IUniswapV2Pair.sol";
+import "./interfaces/IERC20.sol";
 
 contract AddLiquidWithRouter {
     /**
@@ -20,6 +21,15 @@ contract AddLiquidWithRouter {
 
     function addLiquidityWithRouter(address usdcAddress, uint256 deadline) public {
         // your code start here
+        IUniswapV2Router usdcRouter = IUniswapV2Router(router);
+        uint256 ethBalance = address(this).balance;
+        uint256 usdcBalance = IERC20(usdcAddress).balanceOf(address(this)); 
+
+        require(ethBalance > 0 && usdcBalance > 0, "not enough balance");
+
+        IERC20(usdcAddress).approve(router, usdcBalance);
+
+        usdcRouter.addLiquidityETH{value: ethBalance}(usdcAddress, usdcBalance, 0, 0, msg.sender, block.timestamp + 60);
     }
 
     receive() external payable {}

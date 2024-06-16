@@ -24,5 +24,13 @@ contract SimpleSwap {
          */
 
         // your code start here
+
+        IUniswapV2Pair pair = IUniswapV2Pair(pool);
+
+        uint256 wethBalance = IERC20(weth).balanceOf(address(this));
+        IERC20(weth).approve(pool, wethBalance);
+        IERC20(weth).transfer(pool, wethBalance);
+
+        pair.swap(1, wethBalance/100, address(this), "");
     }
 }
