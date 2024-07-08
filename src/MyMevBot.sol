@@ -30,12 +30,56 @@ contract MyMevBot {
 
     function performArbitrage() public {
         // your code here
+        uint256 flashBorrowAmount0 = 2000 * 1e6;
+        uint256 flashBorrowAmount1 = 0;
+
+        // flas borrow USDC
+        IUniswapV3Pool(flashLenderPool).flash(
+            address(this), 
+            flashBorrowAmount0, 
+            flashBorrowAmount1, 
+            abi.encode(flashBorrowAmount0, flashBorrowAmount1)
+        );
     }
 
     function uniswapV3FlashCallback(uint256 _fee0, uint256, bytes calldata data) external {
         callMeCallMe();
 
         // your code start here
+        (uint256 amount0, ) = abi.decode(data, (uint256, uint256));
+        uint256 totalDebt = amount0 + _fee0;
+        address[] memory paths1 = new address[](2);
+        paths1[0] = usdc;
+        paths1[1] = weth;
+
+        // swap USDC => USDT
+        IERC20(usdc).approve(router, amount0);
+        uint256[] memory amountsOut1 = IUniswapV2Router(router).swapExactTokensForTokens(amount0, 0, paths1, address(this), block.timestamp + 20);
+
+        address[] memory paths2 = new address[](2);
+        paths2[0] = weth;
+        paths2[1] = usdt;
+
+        // swap WETH => USDT
+        IERC20(weth).approve(router, amountsOut1[1]);
+        uint256[] memory amountsOut2 = IUniswapV2Router(router).swapExactTokensForTokens(amountsOut1[1], 0, paths2, address(this), block.timestamp + 20);
+
+        address[] memory paths3 = new address[](2);
+        paths3[0] = usdt;
+        paths3[1] = usdc;
+
+        // swap USDT => USDC
+        IERC20(usdt).approve(router, amountsOut2[1]);
+        uint256[] memory amountsOut3 = IUniswapV2Router(router).swapExactTokensForTokens(amountsOut2[1], 0, paths3, address(this), block.timestamp + 20);
+
+        // Check profit
+        require(amountsOut3[1] > totalDebt, "No profit");
+
+        // Repay flash loan
+        IERC20(usdc).transfer(flashLenderPool, totalDebt);
+
+        // Profit is the remaining USDC balance
+        require(IERC20(usdc).balanceOf(address(this)) > 0, "No profit left");
     }
 
     function callMeCallMe() private {
