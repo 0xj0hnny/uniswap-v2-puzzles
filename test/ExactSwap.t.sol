@@ -23,13 +23,17 @@ contract ExactSwapTest is Test {
 
     function test_PerformExactSwap() public {
         (uint256 r0, uint256 r1,) = IUniswapV2Pair(pool).getReserves();
-
+        console2.log("1 r0: ", r0);
+        console2.log("1 r1: ", r1);
         vm.prank(address(0xb0b));
         exactSwap.performExactSwap(pool, weth, usdc);
 
         uint256 foo = (1 ether) - (IUniswapV2Pair(weth).balanceOf(address(exactSwap)));
-
+        console2.log("Foo: ", foo);
         uint256 d = (foo * 997 * r0) / ((r1 * 1000) + (997 * foo));
+        console2.log("2 r0: ", r0);
+        console2.log("2 r1: ", r1);
+        console2.log("d: ", d);
 
         uint256 puzzleBal = IUniswapV2Pair(usdc).balanceOf(address(exactSwap));
 

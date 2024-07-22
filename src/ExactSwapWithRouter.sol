@@ -13,12 +13,28 @@ contract ExactSwapWithRouter {
      */
     address public immutable router;
 
+    event Amount(uint256 amount0, uint256 amount1);
     constructor(address _router) {
         router = _router;
     }
 
     function performExactSwapWithRouter(address weth, address usdc, uint256 deadline) public {
         // your code start here
+        uint256 routerBalance = IERC20(weth).balanceOf(address(this));
+        IERC20(weth).approve(router,routerBalance);
+        address[] memory path = new address[](2);
+        path[0] = weth;
+        path[1] = usdc;
+
+        uint256 exactOut = 1337 * 10 ** 6;
+        uint[] memory amounts = IUniswapV2Router(router).swapTokensForExactTokens(
+            exactOut,
+            routerBalance,
+            path,
+            address(this),
+            deadline
+        );
+        emit Amount(amounts[0], amounts[1]);
     }
 }
 
@@ -37,4 +53,12 @@ interface IUniswapV2Router {
         address to,
         uint256 deadline
     ) external returns (uint256[] memory amounts);
+
+    function swapTokensForExactTokens(
+        uint amountOut,
+        uint amountInMax,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external returns (uint[] memory amounts);
 }
