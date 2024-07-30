@@ -24,5 +24,15 @@ contract ExactSwap {
          */
 
         // your code start here
+        uint256 exact0Out = 1337 * 10 ** 6;
+        uint256 exact1Out = 0;
+
+        (uint256 x, uint256 y, ) = IUniswapV2Pair(pool).getReserves();
+        uint numerator = y * (exact0Out) * (1000);
+        uint denominator = (x - exact0Out) * 997; // 3% fee
+        uint amountInWallet = (numerator / denominator) + 1;
+
+        IERC20(weth).transfer(pool,amountInWallet);
+        IUniswapV2Pair(pool).swap(exact0Out, exact1Out, address(this), "");
     }
 }
